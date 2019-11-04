@@ -5,11 +5,11 @@ FASTLED_USING_NAMESPACE
 //////////////////////////////////////
 //
 //
-//      1D PONG - for WLED Strip
+//      1D PONG - for LED Strips
 //          created by
 //       Jan P. Hildebrand
 //
-//        MIT License
+//
 ///////////////////////////////////////
 
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
@@ -27,11 +27,11 @@ FASTLED_USING_NAMESPACE
 #define NUM_LEDS    117     //Lodgia = 116 LEDS
 CRGB leds[NUM_LEDS];
 
-/////////////////////
+//////////////////////////////////////
 //
-//  Settings
+//           Settings
 //
-/////////////////////
+////////////////////////////////////// 
 
   //GAME SETTINGS
 #define LIFES 4
@@ -45,16 +45,18 @@ CRGB leds[NUM_LEDS];
 #define BRIGHTNESS          96   // LED Brightness
 #define FADE_SETTING        10
 
-/////////////////////////
-//
-// end of Settings
-//
-/////////////////////////
 
+
+//////////////////////////////////////
+//
+// Initialization of game parameters
+//
+//////////////////////////////////////
 
 int FADE_TIME = FADE_SETTING*5;
 const int NUM_GAME_LEDS = NUM_LEDS-(10*LIFES);
 
+bool gamemode_active = false;
 bool game_started = false;
 bool btnP1 = false;
 bool btnP2 = false;
@@ -71,12 +73,23 @@ int ball_dir = 1;                   // Ball direction: -1=left  1=right
 int ball_speed = START_BALL_SPEED;  // LEDs/second
 
 int leds_per_player = START_leds_per_player;
+
+//////////////////////////////////////
+//
+// Initial. of LED-lightshow parameters
+//
+//////////////////////////////////////
 int gHue = 0;
 
+// List of patterns to cycle through.  Each is defined as a separate function below.
+typedef void (*SimplePatternList[])();
+SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti/*, sinelon*/, juggle/*, bpm*/ };
+
+uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
 
 void setup() {
-  delay(2000); // 3 second delay for recovery
+  delay(1000); // 1 second delay for recovery
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -102,13 +115,28 @@ void setup() {
 void loop()
 {
   ball_pos_rev = NUM_GAME_LEDS-ball_pos-1;
-  oneDPong();
-
+  
+  // if a button has been pressed switch to gaming mode
+  if (btnP1 || btnP2)
+  {
+	btnP1 = false;
+	btnP2 = false;
+	gamemode_active = true;
+  }
+  
+  if (gamemode_active)
+  {
+	  oneDPong();
+  }
+  else
+  {
+	  // play lightshow
+  }
+  
   // send the 'leds' array out to the actual LED strip
   FastLED.show();  
   // insert a delay to keep the framerate modest
   FastLED.delay(1000/FRAMES_PER_SECOND);
-
 
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
@@ -238,6 +266,7 @@ void pOneLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
+  gamemode_active = false;
 }
 
 
@@ -255,6 +284,7 @@ void pTwoLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
+  gamemode_active = false;
 }
 
 
@@ -373,6 +403,7 @@ void ponepressed()
     btn1_alteZeit = millis();
   }    
 }
+
 
 void ptwopressed()
 {
