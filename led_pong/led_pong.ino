@@ -45,7 +45,9 @@ FASTLED_USING_NAMESPACE
 #define LIFES 4					  // Number of Lifes a player has
 #define START_leds_per_player 5   // Number of the LEDs on that the player has to press his button
 #define START_BALL_SPEED    10    // initial ball speed (speed increases during gameplay)
+#define SPEED_INCREASE		3	  // increase of speed at every paddle hit
 #define KILL_FLASHES 		2
+
 
   //LED SETTINGS
 #define FRAMES_PER_SECOND   100   // Framerate on most parts
@@ -209,11 +211,13 @@ void oneDPong()
     if (btnP1)
     {
       btnP1 = false;
+	  // if player 1 pressed in the correct time
       if (ball_pos <= leds_per_player)
       {
         ball_dir = ball_dir*(-1);
-        ball_speed += 3;
+        ball_speed += SPEED_INCREASE;
       }
+	  // if player 1 pressed in the wrong time
       else
       {
         playerOneKilled();
@@ -222,11 +226,13 @@ void oneDPong()
     if (btnP2)
     {
       btnP2 = false;
+	  // if player 2 pressed in the correct time
       if ((NUM_GAME_LEDS-ball_pos-1) <= leds_per_player)
       {
         ball_dir = ball_dir*(-1);
-        ball_speed += 3;
+        ball_speed += SPEED_INCREASE;
       }
+	  // if player 2 pressed in the wrong time
       else
       {
       playerTwoKilled();
@@ -234,13 +240,13 @@ void oneDPong()
     }
    
     refresh_oneDPong();
-    ball_onePong();
+    update_ball();
   }
   
 }
 
 
-void ball_onePong()
+void update_ball()
 {
   ball_pos += ball_dir;
   
