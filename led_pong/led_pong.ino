@@ -16,16 +16,24 @@ FASTLED_USING_NAMESPACE
 #warning "Requires FastLED 3.1 or later; check github for latest code."
 #endif
 
-//Pins for the two buttons
+
+//////////////////////////////////////
+//
+// Adjust according to your hardware:
+//
+//////////////////////////////////////
+
+//Pins of the two buttons (add Pull-down resistor to ground)
 #define BTN_P1_PIN  3
 #define BTN_P2_PIN  2
 
-#define DATA_PIN    5
-//#define CLK_PIN   4
-#define LED_TYPE    WS2812B
-#define COLOR_ORDER GRB
-#define NUM_LEDS    117     //Lodgia = 116 LEDS
-CRGB leds[NUM_LEDS];
+#define NUM_LEDS    117     	// Number of LEDs your strip contains 				// Lodgia = 116 LEDS
+#define DATA_PIN    5			// DATA_PIN of the LED Strip
+#define LED_TYPE    WS2812B		// LED Strip type check FastLED library for support
+#define COLOR_ORDER GRB			// color order of the LED Strip
+
+
+
 
 //////////////////////////////////////
 //
@@ -34,15 +42,15 @@ CRGB leds[NUM_LEDS];
 ////////////////////////////////////// 
 
   //GAME SETTINGS
-#define LIFES 4
+#define LIFES 4					  // Number of Lifes a player has
 #define START_leds_per_player 5   // Number of the LEDs on that the player has to press his button
-#define START_BALL_SPEED    10    
-#define KILL_FLASHES       2
+#define START_BALL_SPEED    10    // initial ball speed (speed increases during gameplay)
+#define KILL_FLASHES 		2
 
   //LED SETTINGS
-#define FRAMES_PER_SECOND   100    // Framerate on most parts
+#define FRAMES_PER_SECOND   100   // Framerate on most parts
 #define START_SEQ_SPEED     30    // Start sequence speed in LEDs/second
-#define BRIGHTNESS          96   // LED Brightness
+#define BRIGHTNESS          96    // LED Brightness
 #define FADE_SETTING        10
 
 
@@ -79,13 +87,16 @@ int leds_per_player = START_leds_per_player;
 // Initial. of LED-lightshow parameters
 //
 //////////////////////////////////////
+
+CRGB leds[NUM_LEDS];
+
 int gHue = 0;
 
-// List of patterns to cycle through.  Each is defined as a separate function below.
+// List of patterns to cycle through during lightshow each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti/*, sinelon*/, juggle/*, bpm*/ };
 
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is currently active
 
 
 void setup() {
@@ -93,7 +104,6 @@ void setup() {
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
