@@ -27,10 +27,10 @@ FASTLED_USING_NAMESPACE
 #define BTN_P1_PIN  3
 #define BTN_P2_PIN  2
 
-#define NUM_LEDS    117     	// Number of LEDs your strip contains 				// Lodgia = 116 LEDS
-#define DATA_PIN    5			// DATA_PIN of the LED Strip
+#define NUM_LEDS    117     	// Number of LEDs your strip contains has to be unequal 				// Lodgia = 116 LEDS
+#define DATA_PIN    5			    // DATA_PIN of the LED Strip
 #define LED_TYPE    WS2812B		// LED Strip type check FastLED library for support
-#define COLOR_ORDER GRB			// color order of the LED Strip
+#define COLOR_ORDER GRB			  // color order of the LED Strip
 
 
 
@@ -44,8 +44,8 @@ FASTLED_USING_NAMESPACE
   //GAME SETTINGS
 #define LIFES 4					  // Number of Lifes a player has
 #define START_leds_per_player 5   // Number of the LEDs on that the player has to press his button
-#define START_BALL_SPEED    10    // initial ball speed (speed increases during gameplay)
-#define SPEED_INCREASE		3	  // increase of speed at every paddle hit
+#define START_BALL_SPEED    14    // initial ball speed (speed increases during gameplay)
+#define SPEED_INCREASE		2	  // increase of speed at every paddle hit
 #define KILL_FLASHES 		2
 
 
@@ -57,11 +57,11 @@ FASTLED_USING_NAMESPACE
 
 
 
-//////////////////////////////////////
+///////////////////////////////////////////
 //
-// Initialization of game parameters
+// Initialization of game + LED parameters
 //
-//////////////////////////////////////
+///////////////////////////////////////////
 
 int FADE_TIME = FADE_SETTING*5;
 const int NUM_GAME_LEDS = NUM_LEDS-(10*LIFES);
@@ -84,25 +84,11 @@ int ball_speed = START_BALL_SPEED;  // LEDs/second
 
 int leds_per_player = START_leds_per_player;
 
-//////////////////////////////////////
-//
-// Initial. of LED-lightshow parameters
-//
-//////////////////////////////////////
-
 CRGB leds[NUM_LEDS];
-
-int gHue = 0;
-
-// List of patterns to cycle through during lightshow each is defined as a separate function below.
-typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti/*, sinelon*/, juggle/*, bpm*/ };
-
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is currently active
 
 
 void setup() {
-  delay(1000); // 1 second delay for recovery
+  delay(300); // 300 millisecond delay for recovery
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -124,25 +110,35 @@ void setup() {
 }
 
 
+// List of patterns to cycle through during lightshow each is defined as a separate function below.
+typedef void (*SimplePatternList[])();
+SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, /*sinelon,*/ juggle, bpm };
+
+uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is currently active
+int gHue = 0;
+
+
 void loop()
 {
   ball_pos_rev = NUM_GAME_LEDS-ball_pos-1;
   
   // if a button has been pressed switch to gaming mode
-  if (btnP1 || btnP2)
+  if (!gamemode_active && (btnP1 || btnP2))
   {
-	btnP1 = false;
-	btnP2 = false;
-	gamemode_active = true;
+  	btnP1 = false;
+  	btnP2 = false;
+  	gamemode_active = true;
   }
-  
   if (gamemode_active)
   {
+    // play game
 	  oneDPong();
   }
   else
   {
-	  // play lightshow
+	  // execute lightshow
+    // Call the current pattern function once, updating the 'leds' array
+    gPatterns[gCurrentPatternNumber]();
   }
   
   // send the 'leds' array out to the actual LED strip
@@ -152,6 +148,8 @@ void loop()
 
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+
+  EVERY_N_SECONDS( 20 ) { nextPattern(); } // change patterns periodically
 
 /*
   Serial.print("Button1: ");
@@ -176,6 +174,88 @@ void loop()
   */
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+//
+//
+//        Lightshow functions
+//
+//
+///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////// 
+
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+
+void nextPattern()
+{
+  // add one to the current pattern number, and wrap around at the end
+  gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+}
+
+void rainbow() 
+{
+  // FastLED's built-in rainbow generator
+  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+}
+
+void rainbowWithGlitter() 
+{
+  // built-in FastLED rainbow, plus some random sparkly glitter
+  rainbow();
+  addGlitter(80);
+}
+
+void addGlitter( fract8 chanceOfGlitter) 
+{
+  if( random8() < chanceOfGlitter) {
+    leds[ random16(NUM_LEDS) ] += CRGB::White;
+  }
+}
+
+void confetti() 
+{
+  // random colored speckles that blink in and fade smoothly
+  fadeToBlackBy( leds, NUM_LEDS, 10);
+  int pos = random16(NUM_LEDS);
+  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+}
+
+void sinelon()
+{
+  // a colored dot sweeping back and forth, with fading trails
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  int pos = beatsin16( 13, 0, NUM_LEDS-1 );
+  leds[pos] += CHSV( gHue, 255, 192);
+}
+
+void bpm()
+{
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+  uint8_t BeatsPerMinute = 62;
+  CRGBPalette16 palette = PartyColors_p;
+  uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+  for( int i = 0; i < NUM_LEDS; i++) { //9948
+    leds[i] = ColorFromPalette(palette, gHue+(i*2), beat-gHue+(i*10));
+  }
+}
+
+void juggle() {
+  // eight colored dots, weaving in and out of sync with each other
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  byte dothue = 0;
+  for( int i = 0; i < 8; i++) {
+    leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
+    dothue += 32;
+  }
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+//    Game functions
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void oneDPong()
 {
@@ -429,23 +509,3 @@ void ptwopressed()
     btn1_alteZeit = millis();
   }   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
