@@ -108,6 +108,7 @@ void setup() {
   randomSeed(analogRead(0));
 
   Serial.begin(9600);
+  frames_per_second = FRAMES_PER_SECOND;
 }
 
 
@@ -140,7 +141,6 @@ void loop()
   // lightshow mode
   else if (mode == 2)
   {
-    frames_per_second = FRAMES_PER_SECOND;
 	  // execute lightshow
     // Call the current pattern function once, updating the 'leds' array
     gPatterns[gCurrentPatternNumber]();
@@ -150,7 +150,7 @@ void loop()
   else if (mode==0)
   {
     fill_solid( leds, NUM_LEDS, CRGB::Black);
-    for (int i=0; i<(NUM_LEDS/4); i++)
+    for (int i=0; i<(NUM_LEDS/8); i++)
     {
       leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
     }
@@ -159,8 +159,8 @@ void loop()
   //constant rainbow mode
   else if (mode==1)
   {
-    frames_per_second = 40;
-    rainbow();
+    //rainbow();
+    juggle_red_slow();
   }
   
   // send the 'leds' array out to the actual LED strip
@@ -263,7 +263,7 @@ void bpm()
 
 void juggle_blue() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy( leds, NUM_LEDS, 18);
   byte dothue = 160;
   for( int i = 0; i < 8; i++) {
     leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
@@ -273,11 +273,21 @@ void juggle_blue() {
 
 void juggle_red() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy( leds, NUM_LEDS, 18);
   byte dothue = 0;
   for( int i = 0; i < 8; i++) {
     leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
-    dothue += 6;
+    dothue += 4;
+  }
+}
+
+void juggle_red_slow() {
+  // eight colored dots, weaving in and out of sync with each other
+  fadeToBlackBy( leds, NUM_LEDS, 2);
+  byte dothue = 0;
+  for( int i = 0; i < 8; i++) {
+    leds[beatsin16( i+2, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
+    dothue += 2;
   }
 }
 
