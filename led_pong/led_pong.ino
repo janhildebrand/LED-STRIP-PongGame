@@ -44,15 +44,15 @@ FASTLED_USING_NAMESPACE
   //GAME SETTINGS
 #define LIFES 4					  // Number of Lifes a player has
 #define START_leds_per_player 5   // Number of the LEDs on that the player has to press his button
-#define START_BALL_SPEED    14    // initial ball speed (speed increases during gameplay)
+#define START_BALL_SPEED    30    // initial ball speed (speed increases during gameplay)
 #define SPEED_INCREASE		2	  // increase of speed at every paddle hit
-#define KILL_FLASHES 		2
+#define KILL_FLASHES 		1
 
 
   //LED SETTINGS
-#define FRAMES_PER_SECOND   100   // Framerate on most parts
+#define FRAMES_PER_SECOND  100   // Framerate on most parts
 #define START_SEQ_SPEED     30    // Start sequence speed in LEDs/second
-#define BRIGHTNESS          96    // LED Brightness
+#define BRIGHTNESS          70    // LED Brightness  //96
 #define FADE_SETTING        10
 
 
@@ -66,7 +66,7 @@ FASTLED_USING_NAMESPACE
 int FADE_TIME = FADE_SETTING*5;
 const int NUM_GAME_LEDS = NUM_LEDS-(10*LIFES);
 
-bool gamemode_active = false;
+int mode = 0;               // variable to switch between normal lighting, lightshow, game, etc
 bool game_started = false;
 bool btnP1 = false;
 bool btnP2 = false;
@@ -84,6 +84,7 @@ int ball_speed = START_BALL_SPEED;  // LEDs/second
 
 int leds_per_player = START_leds_per_player;
 
+int frames_per_second=50;
 CRGB leds[NUM_LEDS];
 
 
@@ -112,8 +113,7 @@ void setup() {
 
 // List of patterns to cycle through during lightshow each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, /*sinelon,*/ juggle, bpm };
-
+SimplePatternList gPatterns = { confetti, juggle_blue, /*sinelon,*/ confetti, juggle_red/*, bpm*/ };
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is currently active
 int gHue = 0;
 
@@ -122,34 +122,56 @@ void loop()
 {
   ball_pos_rev = NUM_GAME_LEDS-ball_pos-1;
   
-  // if a button has been pressed switch to gaming mode
-  if (!gamemode_active && (btnP1 || btnP2))
+  // if both buttons are pressed at the same time switch to next mode
+  if (mode!=3 && (btnP1 && btnP2))
   {
   	btnP1 = false;
   	btnP2 = false;
-  	gamemode_active = true;
+  	mode += 1;
   }
-  if (gamemode_active)
+  
+  // Game mode
+  if (mode == 3)
   {
     // play game
 	  oneDPong();
   }
-  else
+
+  // lightshow mode
+  else if (mode == 2)
   {
+    frames_per_second = FRAMES_PER_SECOND;
 	  // execute lightshow
     // Call the current pattern function once, updating the 'leds' array
     gPatterns[gCurrentPatternNumber]();
   }
   
+  // constant lighting mode
+  else if (mode==0)
+  {
+    fill_solid( leds, NUM_LEDS, CRGB::Black);
+    for (int i=0; i<(NUM_LEDS/4); i++)
+    {
+      leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
+    }
+  }
+
+  //constant rainbow mode
+  else if (mode==1)
+  {
+    frames_per_second = 40;
+    rainbow();
+  }
+  
   // send the 'leds' array out to the actual LED strip
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(1000/FRAMES_PER_SECOND);
+  FastLED.delay(1000/frames_per_second);
 
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
 
-  EVERY_N_SECONDS( 20 ) { nextPattern(); } // change patterns periodically
+  EVERY_N_SECONDS( 15 ) { nextPattern(); } // change patterns periodically
 
 /*
   Serial.print("Button1: ");
@@ -195,7 +217,7 @@ void nextPattern()
 void rainbow() 
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow( leds, NUM_LEDS, gHue, 1);
 }
 
 void rainbowWithGlitter() 
@@ -217,15 +239,15 @@ void confetti()
   // random colored speckles that blink in and fade smoothly
   fadeToBlackBy( leds, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
-  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+  leds[pos] += CHSV( gHue + random8(32), 200, 255);
 }
 
 void sinelon()
 {
   // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy( leds, NUM_LEDS, 15);
   int pos = beatsin16( 13, 0, NUM_LEDS-1 );
-  leds[pos] += CHSV( gHue, 255, 192);
+  leds[pos] += CHSV( gHue/2, 255, 192);
 }
 
 void bpm()
@@ -239,13 +261,23 @@ void bpm()
   }
 }
 
-void juggle() {
+void juggle_blue() {
+  // eight colored dots, weaving in and out of sync with each other
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  byte dothue = 160;
+  for( int i = 0; i < 8; i++) {
+    leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
+    dothue += 6;
+  }
+}
+
+void juggle_red() {
   // eight colored dots, weaving in and out of sync with each other
   fadeToBlackBy( leds, NUM_LEDS, 20);
   byte dothue = 0;
   for( int i = 0; i < 8; i++) {
     leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
-    dothue += 32;
+    dothue += 6;
   }
 }
 
@@ -270,12 +302,15 @@ void oneDPong()
     fill_solid( leds, NUM_LEDS, CRGB::Black);
     for (int i=0; i<(NUM_LEDS/4); i++)
     {
-      leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
+      leds[i] = leds[NUM_LEDS-1-i] = CRGB::Purple;
     }
     //fill_rainbow( &( leds[leds_per_player+10] ), ( NUM_LEDS - 2*leds_per_player - 20 ), gHue, 7);
 
 
-    if (btnP1 || btnP2)
+    delay(200);
+
+    // XOR check of the buttons so game only gets started when only one button is pressed
+    if (!btnP1 != !btnP2)
     {
       btnP1 = false;
       btnP2 = false;
@@ -362,7 +397,7 @@ void pOneLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
-  gamemode_active = false;
+  mode = 0;
 }
 
 
@@ -380,7 +415,7 @@ void pTwoLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
-  gamemode_active = false;
+  mode = 0;
 }
 
 
