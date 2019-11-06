@@ -1,5 +1,5 @@
 # 1D LED Pong
- 1D pong game for LED Strips.<br>
+ One-dimensional pong game for LED Strips.<br>
  If no game is played the LED Strip displays a lightshow
  - The game is designed for two Players.
  - The ball has to be hit by the player with a button press at the correct time (when the ball is in the green area of that player).
