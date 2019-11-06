@@ -7,7 +7,7 @@
  - The ball speed increases with every hit of the ball which makes the game more difficult over time.
  
 # Required Hardware:
-- Arduino Nano (u can use similar or better arduinos (has to support two interrupt pins))
+- Arduino Nano (or similar/better arduinos (it has to support two interrupt pins))
 - LED Strip + Power supply (WS2812B or any other Strip that has individual lightable LEDs and is supported by the FastLED library)
 - two buttons with added pull-down resistors, hooked up to interrupt pins on the arduino
 
