@@ -12,4 +12,4 @@
 - two buttons with added pull-down resistors, hooked up to interrupt pins on the arduino
 
 # Required Software:
-- FastLED library (https://github.com/FastLED/FastLED)
+- FastLED library downloadable directly in the Arduino IDE library manager or at https://github.com/FastLED/FastLED
