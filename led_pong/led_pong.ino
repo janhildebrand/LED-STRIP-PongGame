@@ -24,8 +24,8 @@ FASTLED_USING_NAMESPACE
 //////////////////////////////////////
 
 //Pins of the two buttons (add Pull-down resistor to ground)
-#define BTN_P1_PIN  3
-#define BTN_P2_PIN  2
+#define BTN_P1_PIN  3         // Button Player 1 + Start game
+#define BTN_P2_PIN  2         // Button Player 2 + Scene switch
 
 #define NUM_LEDS    117     	// Number of LEDs your strip contains has to be unequal 				// Lodgia = 116 LEDS
 #define DATA_PIN    5			    // DATA_PIN of the LED Strip
@@ -66,7 +66,8 @@ FASTLED_USING_NAMESPACE
 int FADE_TIME = FADE_SETTING*5;
 const int NUM_GAME_LEDS = NUM_LEDS-(10*LIFES);
 
-int mode = 0;               // variable to switch between normal lighting, lightshow, game, etc
+int lightScene = 0;               // variable to switch between the lighting scenes
+bool game_active = false;         // variable to switch between lighting and the game
 bool game_started = false;
 bool btnP1 = false;
 bool btnP2 = false;
@@ -101,9 +102,10 @@ void setup() {
   pinMode(BTN_P1_PIN, INPUT);
   pinMode(BTN_P2_PIN, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(BTN_P1_PIN), ponepressed, RISING);
+  attachInterrupt(digitalPinToInterrupt(BTN_P1_PIN), gameStartPressed, RISING);
   delay(20);
-  attachInterrupt(digitalPinToInterrupt(BTN_P2_PIN), ptwopressed, RISING);
+  attachInterrupt(digitalPinToInterrupt(BTN_P2_PIN), sceneSwitchPressed, RISING);
+  //detachInterrupt(digitalPinToInterrupt(pin))
 
   randomSeed(analogRead(0));
 
@@ -122,47 +124,41 @@ int gHue = 0;
 void loop()
 {
   ball_pos_rev = NUM_GAME_LEDS-ball_pos-1;
-  
-  // if both buttons are pressed at the same time switch to next mode
-  if (mode!=3 && (btnP1 && btnP2))
-  {
-  	btnP1 = false;
-  	btnP2 = false;
-  	mode += 1;
-  }
-  
-  // Game mode
-  if (mode == 3)
-  {
-    // play game
-	  oneDPong();
-  }
 
-  // lightshow mode
-  else if (mode == 2)
-  {
-	  // execute lightshow
-    // Call the current pattern function once, updating the 'leds' array
-    gPatterns[gCurrentPatternNumber]();
-  }
+  if (!game_active) {
+    switch (lightScene) {
+      case 0:
+        fill_solid( leds, NUM_LEDS, CRGB::Black);
+        for (int i=0; i<(NUM_LEDS/8); i++)
+        {
+          leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
+        }
+        break;
+      
+      case 1:
+        juggle_red_slow();
+        break;
   
-  // constant lighting mode
-  else if (mode==0)
-  {
-    fill_solid( leds, NUM_LEDS, CRGB::Black);
-    for (int i=0; i<(NUM_LEDS/8); i++)
-    {
-      leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
+      case 2:
+        rainbow();
+        break;
+  
+      case 3:
+        // execute lightshow
+        // Call the current pattern function once, updating the 'leds' array
+        gPatterns[gCurrentPatternNumber]();
+        break;
+
+      default:
+        lightScene = 0;
+        break;
     }
   }
-
-  //constant rainbow mode
-  else if (mode==1)
-  {
-    //rainbow();
-    juggle_red_slow();
+  else {
+    // Display Game
+    oneDPong();
   }
-  
+
   // send the 'leds' array out to the actual LED strip
   FastLED.show();  
   // insert a delay to keep the framerate modest
@@ -173,27 +169,6 @@ void loop()
 
   EVERY_N_SECONDS( 15 ) { nextPattern(); } // change patterns periodically
 
-/*
-  Serial.print("Button1: ");
-  Serial.print(btnP1);
-  Serial.print(" -- Button2: ");
-  Serial.print(btnP2);
-*/
-/*
-  Serial.print(" -- ball_pos: ");
-  Serial.print(ball_pos);
-  Serial.print(" -- ball_pos_rev: ");
-  Serial.print(ball_pos_rev);
-  Serial.print(" -- ball_dir: ");
-  Serial.print(ball_dir);
-
-  Serial.print(" -- lifes_p1: ");
-  Serial.print(lifes_p1);
-  Serial.print(" -- lifes_p2: ");
-  Serial.print(lifes_p2);
-
-  Serial.println();
-  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -291,6 +266,31 @@ void juggle_red_slow() {
   }
 }
 
+
+void sceneSwitchPressed()
+{
+  if((millis() - btn1_alteZeit) > entprellZeit)
+  {
+    lightScene++;
+    btn1_alteZeit = millis();
+  }    
+}
+
+void gameStartPressed()
+{
+  game_active = true;
+
+  // Detach scene switch/game start button interrupts
+  detachInterrupt(digitalPinToInterrupt(BTN_P1_PIN));
+  delay(20);
+  detachInterrupt(digitalPinToInterrupt(BTN_P2_PIN));
+  delay(50);
+
+  // Attach Game Button interrupts
+  attachInterrupt(digitalPinToInterrupt(BTN_P1_PIN), ponepressed, RISING);
+  delay(20);
+  attachInterrupt(digitalPinToInterrupt(BTN_P2_PIN), ptwopressed, RISING);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -407,7 +407,8 @@ void pOneLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
-  mode = 0;
+  game_active=false;
+  enableSceneSwitchInterrupts();
 }
 
 
@@ -425,7 +426,8 @@ void pTwoLost()
   }
   ball_pos = ball_pos_center;
   game_started=false;
-  mode = 0;
+  game_active=false;
+  enableSceneSwitchInterrupts();
 }
 
 
@@ -533,6 +535,21 @@ void refresh_oneDPong()
   
   //fadeToBlackBy( &(leds[LIFES*5+2*leds_per_player]) , (NUM_LEDS - 2*(LIFES*5+2*leds_per_player)), 10);
   fadeToBlackBy( leds, NUM_LEDS, FADE_TIME);
+}
+
+
+void enableSceneSwitchInterrupts()
+{
+  // Detach game button interrupts
+  detachInterrupt(digitalPinToInterrupt(BTN_P1_PIN));
+  delay(20);
+  detachInterrupt(digitalPinToInterrupt(BTN_P2_PIN));
+  delay(50);
+
+  // Attach scene switch/game start interrupts
+  attachInterrupt(digitalPinToInterrupt(BTN_P1_PIN), gameStartPressed, RISING);
+  delay(20);
+  attachInterrupt(digitalPinToInterrupt(BTN_P2_PIN), sceneSwitchPressed, RISING);
 }
 
 
