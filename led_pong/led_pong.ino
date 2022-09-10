@@ -129,28 +129,76 @@ void loop()
     switch (lightScene) {
       case 0:
         fill_solid( leds, NUM_LEDS, CRGB::Black);
-        for (int i=0; i<(NUM_LEDS/8); i++)
+        for (int i=0; i<(NUM_LEDS/4); i++)
         {
           leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
         }
         break;
       
       case 1:
-        juggle_red_slow();
+        fill_solid( leds, NUM_LEDS, CRGB::Black);
+        for (int i=0; i<(NUM_LEDS/8); i++)
+        {
+          leds[i] = leds[NUM_LEDS-1-i] = CRGB::Orange;
+        }
         break;
-  
+        
       case 2:
-        rainbow();
+        fill_solid( leds, NUM_LEDS, CRGB::Black);
+        for (int i=0; i<(NUM_LEDS-2); i=i+3)
+        {
+          leds[i] = CRGB::Orange;
+        }
         break;
-  
+
       case 3:
+        fill_solid( leds, NUM_LEDS, CRGB::Black);
+        for (int i=0; i<(NUM_LEDS/8); i++)
+        {
+          leds[i] = leds[NUM_LEDS-1-i] = CRGB::Red;
+        }
+        break;
+        
+      case 4:
+        fill_solid( leds, NUM_LEDS, CRGB::Black);
+        for (int i=0; i<(NUM_LEDS-2); i=i+3)
+        {
+          leds[i] = CRGB::Red;
+        }
+        break;
+        
+      case 5:
         // execute lightshow
         // Call the current pattern function once, updating the 'leds' array
         gPatterns[gCurrentPatternNumber]();
         break;
+          
+      case 6:
+        juggle_red_slow();
+        break;
+
+      case 7:
+        confetti();
+        break;
+
+      case 8:
+        rainbow();
+        break;
+  
+      case 9:
+        rainbowWithGlitter();
+        break;
+
+      case 10:
+        sinelon();
+        break;
+  
+      case 11:
+        bpm();
+        break;
 
       default:
-        lightScene = 0;
+        lightScene = 1;
         break;
     }
   }
