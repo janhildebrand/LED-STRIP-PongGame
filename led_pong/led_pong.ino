@@ -43,9 +43,9 @@ FASTLED_USING_NAMESPACE
 
   //GAME SETTINGS
 #define LIFES 4					  // Number of Lifes a player has
-#define START_leds_per_player 5   // Number of the LEDs on that the player has to press his button
-#define START_BALL_SPEED    30    // initial ball speed (speed increases during gameplay)
-#define SPEED_INCREASE		2	  // increase of speed at every paddle hit
+#define START_leds_per_player 12   // Number of the LEDs on that the player has to press his button
+#define START_BALL_SPEED    40    // initial ball speed (speed increases during gameplay) standard 40)
+#define SPEED_INCREASE		4	  // increase of speed at every paddle hit (standard 3)
 #define KILL_FLASHES 		1
 
 
@@ -155,7 +155,7 @@ void loop()
         fill_solid( leds, NUM_LEDS, CRGB::Black);
         for (int i=0; i<(NUM_LEDS/8); i++)
         {
-          leds[i] = leds[NUM_LEDS-1-i] = CRGB::Red;
+          leds[i] = leds[NUM_LEDS-1-i] = CRGB::OrangeRed;
         }
         break;
         
@@ -163,7 +163,7 @@ void loop()
         fill_solid( leds, NUM_LEDS, CRGB::Black);
         for (int i=0; i<(NUM_LEDS-2); i=i+3)
         {
-          leds[i] = CRGB::Red;
+          leds[i] = CRGB::OrangeRed;
         }
         break;
         
@@ -198,7 +198,7 @@ void loop()
         break;
 
       default:
-        lightScene = 1;
+        lightScene = 0;
         break;
     }
   }
@@ -362,7 +362,6 @@ void oneDPong()
     {
       leds[i] = leds[NUM_LEDS-1-i] = CRGB::Purple;
     }
-    //fill_rainbow( &( leds[leds_per_player+10] ), ( NUM_LEDS - 2*leds_per_player - 20 ), gHue, 7);
 
 
     delay(200);
